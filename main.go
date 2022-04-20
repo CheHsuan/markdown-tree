@@ -40,6 +40,10 @@ func main() {
 				return err
 			}
 
+			if info.IsDir() && info.Name() == ".git" {
+				return filepath.SkipDir
+			}
+
 			tree.InsertNode(path, info.IsDir())
 
 			return nil
