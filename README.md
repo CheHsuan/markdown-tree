@@ -13,13 +13,12 @@ This tool extracts the  target directory hierarchy and converts it to a markdown
 ## Rules
 
 * Directories will become to heading lines with level according to its depth of the root dir.
-* Files will become to an item of list.
-
+* Files will become to items of list.
 * Only support 6 levels since markdown only has 6 levels.
 
 **Special Case**
 
-* Directories with "-example" suffix will be an list item, too.
+* Directories with "-example" suffix will be list items, too.
 
 ## Example
 
