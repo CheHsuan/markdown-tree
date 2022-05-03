@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"markdown-tree/pkg/mdtree"
+	"github.com/CheHsuan/markdown-tree/pkg/mdtree"
 )
 
 var (
