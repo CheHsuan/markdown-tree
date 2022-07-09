@@ -87,7 +87,7 @@ func (tree *markdownTree) GenerateMarkdown(output string) error {
 	w := bufio.NewWriter(fd)
 	defer w.Flush()
 
-	tree.generateMarkdown(w, 1, tree.root, tree.nodes)
+	tree.generateMarkdown(w, 1, filepath.Join("/", tree.root), tree.nodes)
 
 	return nil
 }
