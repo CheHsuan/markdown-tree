@@ -89,24 +89,36 @@ func (tree *markdownTree) GenerateMarkdown(output string) error {
 	w := bufio.NewWriter(fd)
 	defer w.Flush()
 
-	tree.generateMarkdown(w, 1, tree.root, tree.nodes)
+	if err := tree.generateMarkdown(w, 1, tree.root, tree.nodes); err != nil {
+		return fmt.Errorf("failed to generate markdown: %v", err)
+	}
 
 	return nil
 }
 
-func (tree *markdownTree) generateMarkdown(w *bufio.Writer, level int, path string, nodes map[string]interface{}) {
+func (tree *markdownTree) generateMarkdown(w *bufio.Writer, level int, path string, nodes map[string]interface{}) error {
 	if level == 1 {
 		w.WriteString(fmt.Sprintf("%s %s\n", getNumberSign(level), tree.root))
 		tree.generateMarkdown(w, level+1, path, nodes)
-		return
+		return nil
 	}
 
 	// write file first
 	for k, f := range nodes {
 		if _, ok := f.(string); ok {
 			if tree.cfg.withLink {
-				rp, _ := filepath.Rel(tree.root, filepath.Join(path, k))
-				w.WriteString(fmt.Sprintf("- [%s](%s)\n", k, url.QueryEscape(filepath.Join(tree.cfg.baseURL, rp))))
+				rp, err := filepath.Rel(tree.root, filepath.Join(path, k))
+				if err != nil {
+					return fmt.Errorf("failed to get relative path: %v", err)
+				}
+
+				u, err := url.Parse(tree.cfg.baseURL)
+				if err != nil {
+					return fmt.Errorf("malformed URL: %v", err)
+				}
+				u.Path += rp
+
+				w.WriteString(fmt.Sprintf("- [%s](%s)\n", k, u.String()))
 				continue
 			}
 			w.WriteString(fmt.Sprintf("- %s\n", k))
@@ -120,6 +132,8 @@ func (tree *markdownTree) generateMarkdown(w *bufio.Writer, level int, path stri
 			tree.generateMarkdown(w, level+1, filepath.Join(path, k), fmap)
 		}
 	}
+
+	return nil
 }
 
 func getNumberSign(count int) string {
