@@ -16,11 +16,13 @@ const (
 
 type Config struct {
 	withLink bool
+	baseURL  string
 }
 
-func WithLink() func(*Config) {
+func WithLink(baseURL string) func(*Config) {
 	return func(cfg *Config) {
 		cfg.withLink = true
+		cfg.baseURL = baseURL
 	}
 }
 
@@ -87,7 +89,7 @@ func (tree *markdownTree) GenerateMarkdown(output string) error {
 	w := bufio.NewWriter(fd)
 	defer w.Flush()
 
-	tree.generateMarkdown(w, 1, filepath.Join("/", tree.root), tree.nodes)
+	tree.generateMarkdown(w, 1, tree.root, tree.nodes)
 
 	return nil
 }
@@ -103,7 +105,8 @@ func (tree *markdownTree) generateMarkdown(w *bufio.Writer, level int, path stri
 	for k, f := range nodes {
 		if _, ok := f.(string); ok {
 			if tree.cfg.withLink {
-				w.WriteString(fmt.Sprintf("- [%s](%s)\n", k, url.QueryEscape(filepath.Join(path, k))))
+				rp, _ := filepath.Rel(tree.root, filepath.Join(path, k))
+				w.WriteString(fmt.Sprintf("- [%s](%s)\n", k, url.QueryEscape(filepath.Join(tree.cfg.baseURL, rp))))
 				continue
 			}
 			w.WriteString(fmt.Sprintf("- %s\n", k))

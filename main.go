@@ -12,7 +12,8 @@ import (
 var (
 	inputDir   = flag.String("input-dir", "", "input directory path")
 	outputFile = flag.String("output-file", "", "output file path")
-	withLink   = flag.Bool("with-link", false, "enable adding file path as link")
+	withLink   = flag.Bool("with-link", false, "enable adding relative file path as link")
+	baseURL    = flag.String("base-url", "", "set the base URL for --with-link option")
 )
 
 func main() {
@@ -24,7 +25,10 @@ func main() {
 
 	opts := []func(*mdtree.Config){}
 	if *withLink {
-		opts = append(opts, mdtree.WithLink())
+		if *baseURL == "" {
+			log.Panic("missing baseURL for with-link option")
+		}
+		opts = append(opts, mdtree.WithLink(*baseURL))
 	}
 
 	tree := mdtree.NewMarkdownTree(filepath.Base(*inputDir), opts...)
