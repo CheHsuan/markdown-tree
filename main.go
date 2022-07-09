@@ -12,6 +12,7 @@ import (
 var (
 	inputDir   = flag.String("input-dir", "", "input directory path")
 	outputFile = flag.String("output-file", "", "output file path")
+	withLink   = flag.Bool("with-link", false, "enable adding file path as link")
 )
 
 func main() {
@@ -21,7 +22,12 @@ func main() {
 		log.Panic("missing input directory path or output file path")
 	}
 
-	tree := mdtree.NewMarkdownTree(filepath.Base(*inputDir))
+	opts := []func(*mdtree.Config){}
+	if *withLink {
+		opts = append(opts, mdtree.WithLink())
+	}
+
+	tree := mdtree.NewMarkdownTree(filepath.Base(*inputDir), opts...)
 
 	wd, err := os.Getwd()
 	if err != nil {

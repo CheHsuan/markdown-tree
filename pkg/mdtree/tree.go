@@ -3,6 +3,7 @@ package mdtree
 import (
 	"bufio"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,14 +14,31 @@ const (
 	maxLevel         = 6
 )
 
+type Config struct {
+	withLink bool
+}
+
+func WithLink() func(*Config) {
+	return func(cfg *Config) {
+		cfg.withLink = true
+	}
+}
+
 type markdownTree struct {
 	root  string
+	cfg   *Config
 	nodes map[string]interface{}
 }
 
-func NewMarkdownTree(root string) *markdownTree {
+func NewMarkdownTree(root string, options ...func(*Config)) *markdownTree {
+	cfg := &Config{}
+	for _, opt := range options {
+		opt(cfg)
+	}
+
 	return &markdownTree{
 		root:  root,
+		cfg:   cfg,
 		nodes: map[string]interface{}{},
 	}
 }
@@ -69,28 +87,34 @@ func (tree *markdownTree) GenerateMarkdown(output string) error {
 	w := bufio.NewWriter(fd)
 	defer w.Flush()
 
-	tree.generateMarkdown(w, 1, tree.nodes)
+	tree.generateMarkdown(w, 1, tree.root, tree.nodes)
 
 	return nil
 }
 
-func (tree *markdownTree) generateMarkdown(w *bufio.Writer, level int, nodes map[string]interface{}) {
+func (tree *markdownTree) generateMarkdown(w *bufio.Writer, level int, path string, nodes map[string]interface{}) {
 	if level == 1 {
 		w.WriteString(fmt.Sprintf("%s %s\n", getNumberSign(level), tree.root))
-		tree.generateMarkdown(w, level+1, nodes)
+		tree.generateMarkdown(w, level+1, path, nodes)
 		return
 	}
 
+	// write file first
 	for k, f := range nodes {
 		if _, ok := f.(string); ok {
+			if tree.cfg.withLink {
+				w.WriteString(fmt.Sprintf("- [%s](%s)\n", k, url.QueryEscape(filepath.Join(path, k))))
+				continue
+			}
 			w.WriteString(fmt.Sprintf("- %s\n", k))
 		}
 	}
 
+	// then write directory
 	for k, f := range nodes {
 		if fmap, ok := f.(map[string]interface{}); ok {
 			w.WriteString(fmt.Sprintf("%s %s\n", getNumberSign(level), k))
-			tree.generateMarkdown(w, level+1, fmap)
+			tree.generateMarkdown(w, level+1, filepath.Join(path, k), fmap)
 		}
 	}
 }
